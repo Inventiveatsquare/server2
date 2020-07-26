@@ -1,4 +1,5 @@
 const User = require('../models/userModel');
+const Admin = require('../models/adminModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
@@ -137,5 +138,50 @@ exports.deleteUser = async (req, res, next) => {
     });
   } catch (error) {
     next(error)
+  }
+}
+
+
+// admin
+
+
+exports.adminsign = async (req, res, next) => {
+  try {
+    const { name, role, email, password } = req.body
+    const hashedPassword = await hashPassword(password);
+    const newUser = new Admin({ name, email, password: hashedPassword, role: role || "basic" });
+    const accessToken = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
+      expiresIn: "1d"
+    });
+    newUser.accessToken = accessToken;
+    await newUser.save();
+    res.json({
+      data: newUser,
+      message: "You have signed up successfully"
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+
+
+exports.adminlogin = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    const user = await Admin.findOne({ email });
+    if (!user) return next(new Error('Email does not exist'));
+    const validPassword = await validatePassword(password, user.password);
+    if (!validPassword) return next(new Error('Password is not correct'))
+    const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1d"
+    });
+    await Admin.findByIdAndUpdate(user._id, { accessToken })
+    res.status(200).json({
+      data: { email: user.email, role: user.role },
+      accessToken
+    })
+  } catch (error) {
+    next(error);
   }
 }

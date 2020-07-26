@@ -6,6 +6,10 @@ router.post('/users/register', userController.signup);
 
 router.post('/users/login', userController.login);
 
+router.post('/users/adminregister', userController.adminsign);
+
+router.post('/users/adminlogin', userController.adminlogin);
+
 router.get('/user/:userId', userController.allowIfLoggedin, userController.getUser);
 
 router.get('/users', userController.allowIfLoggedin, userController.grantAccess('readAny', 'profile'), userController.getUsers);
